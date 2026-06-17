@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Compressor } from "./lib/compressor";
 import { humanSize, savedPct } from "./lib/format";
+import { estimateMs, progressPct } from "./lib/progress";
 import type { CompressSettings, OutFormat } from "./types";
 
 interface Item {
@@ -15,6 +16,8 @@ interface Item {
   url?: string;
   skipped: boolean;
   error?: string;
+  /** ms timestamp when this job started compressing — paces the progress bar. */
+  startedAt: number;
 }
 
 const FORMATS: { value: OutFormat; label: string }[] = [
@@ -39,6 +42,7 @@ export function App() {
   const [quality, setQuality] = useState(80);
   const [dragging, setDragging] = useState(false);
   const [zipping, setZipping] = useState(false);
+  const [now, setNow] = useState(0);
 
   const settings = useMemo<CompressSettings>(
     () => ({ format, quality: customQuality ? quality : undefined }),
@@ -47,7 +51,18 @@ export function App() {
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
-  useEffect(() => () => compressor.current?.dispose(), []);
+  // Own the worker pool's lifecycle here. React StrictMode (dev) mounts twice:
+  // it runs this cleanup — which terminates the workers — then re-runs the
+  // effect. Without re-creating the pool (and nulling the ref so the next
+  // compress sees it's gone), `compressor.current` would keep pointing at a
+  // disposed pool, so every job would post to a dead worker and hang forever.
+  useEffect(() => {
+    if (!compressor.current) compressor.current = new Compressor();
+    return () => {
+      compressor.current?.dispose();
+      compressor.current = null;
+    };
+  }, []);
 
   const update = useCallback((id: number, patch: Partial<Item>) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
@@ -80,6 +95,7 @@ export function App() {
   const addFiles = useCallback(
     (files: File[]) => {
       const images = files.filter((f) => f.type.startsWith("image/") || IMAGE_RE.test(f.name));
+      const startedAt = Date.now();
       const fresh: Item[] = images.map((file) => ({
         id: uid++,
         file,
@@ -88,6 +104,7 @@ export function App() {
         originalSize: file.size,
         compressedSize: 0,
         skipped: false,
+        startedAt,
       }));
       setItems((prev) => [...prev, ...fresh]);
       for (const it of fresh) void runOne(it.id, it.file);
@@ -99,9 +116,10 @@ export function App() {
     // Side effects (revoke URLs, launch work) must stay OUT of the state updater
     // — under StrictMode an impure updater runs twice and double-compresses.
     const current = itemsRef.current;
+    const startedAt = Date.now();
     for (const it of current) if (it.url) URL.revokeObjectURL(it.url);
     setItems((prev) =>
-      prev.map((it) => ({ ...it, status: "working", url: undefined, outBlob: undefined })),
+      prev.map((it) => ({ ...it, status: "working", url: undefined, outBlob: undefined, startedAt })),
     );
     for (const it of current) void runOne(it.id, it.file);
   }, [runOne]);
@@ -154,6 +172,16 @@ export function App() {
   }, [items]);
 
   const working = items.some((it) => it.status === "working");
+
+  // Tick a shared clock while anything is compressing so the progress bars
+  // animate. One interval for the whole list — rows derive their own elapsed
+  // time from it, so we never mutate `items` per frame.
+  useEffect(() => {
+    if (!working) return;
+    setNow(Date.now());
+    const id = window.setInterval(() => setNow(Date.now()), 120);
+    return () => window.clearInterval(id);
+  }, [working]);
 
   return (
     <div className="app">
@@ -246,35 +274,50 @@ export function App() {
       )}
 
       <ul className="list">
-        {items.map((it) => (
-          <li key={it.id} className={`row ${it.status}`}>
-            <div className="thumb">{it.url ? <img src={it.url} alt="" /> : <div className="spin" />}</div>
-            <div className="meta">
-              <div className="name">{it.outputName}</div>
-              <div className="sizes">
-                {it.status === "done" ? (
-                  <>
-                    {humanSize(it.originalSize)} → {humanSize(it.compressedSize)}{" "}
-                    {it.skipped ? (
-                      <span className="kept">already optimal</span>
-                    ) : (
-                      <span className="save">−{savedPct(it.originalSize, it.compressedSize)}%</span>
-                    )}
-                  </>
-                ) : it.status === "error" ? (
-                  <span className="err">{it.error}</span>
-                ) : (
-                  <span className="muted">compressing… {humanSize(it.originalSize)}</span>
+        {items.map((it) => {
+          const elapsed = it.status === "working" ? Math.max(0, now - it.startedAt) : 0;
+          const pct =
+            it.status === "working"
+              ? progressPct(elapsed, estimateMs(it.originalSize, it.file.type))
+              : 0;
+          return (
+            <li key={it.id} className={`row ${it.status}`}>
+              <div className="thumb">{it.url ? <img src={it.url} alt="" /> : <div className="spin" />}</div>
+              <div className="meta">
+                <div className="name">{it.outputName}</div>
+                <div className="sizes">
+                  {it.status === "done" ? (
+                    <>
+                      {humanSize(it.originalSize)} → {humanSize(it.compressedSize)}{" "}
+                      {it.skipped ? (
+                        <span className="kept">already optimal</span>
+                      ) : (
+                        <span className="save">−{savedPct(it.originalSize, it.compressedSize)}%</span>
+                      )}
+                    </>
+                  ) : it.status === "error" ? (
+                    <span className="err">{it.error}</span>
+                  ) : (
+                    <span className="muted">
+                      compressing… {elapsed > 400 ? `${(elapsed / 1000).toFixed(1)}s` : humanSize(it.originalSize)} ·{" "}
+                      {pct}%
+                    </span>
+                  )}
+                </div>
+                {it.status === "working" && (
+                  <div className="bar" aria-hidden="true">
+                    <i style={{ width: `${pct}%` }} />
+                  </div>
                 )}
               </div>
-            </div>
-            {it.status === "done" && it.url && (
-              <a className="dl" href={it.url} download={it.outputName}>
-                Download
-              </a>
-            )}
-          </li>
-        ))}
+              {it.status === "done" && it.url && (
+                <a className="dl" href={it.url} download={it.outputName}>
+                  Download
+                </a>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       <footer className="foot">

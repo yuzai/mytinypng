@@ -265,6 +265,21 @@ button:disabled {
   }
 }
 
+.bar {
+  margin-top: 7px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.18s ease-out;
+}
+
 .foot {
   margin-top: 36px;
   text-align: center;
