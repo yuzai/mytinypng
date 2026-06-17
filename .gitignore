@@ -1,0 +1,19 @@
+node_modules/
+dist/
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+coverage/
+# benchmark scratch (samples/ IS committed)
+packages/core/bench/.out/
+packages/core/bench/.fixtures/
+packages/core/bench/.tinycache/
+packages/core/bench/output/
+.mytinypng-cache.json
+
+# playwright test artifacts
+.playwright-mcp/
+*-result.png

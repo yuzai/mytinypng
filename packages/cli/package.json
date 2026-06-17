@@ -1,0 +1,42 @@
+{
+  "name": "mytinypng",
+  "version": "0.1.0",
+  "description": "TinyPNG-quality batch image compression — CLI and library (sharp + mozjpeg + libimagequant + oxipng).",
+  "type": "module",
+  "bin": {
+    "mytinypng": "./dist/cli.js"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "keywords": ["image", "compression", "tinypng", "png", "jpeg", "webp", "optimize", "cli", "sharp"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mytinypng/core": "workspace:*",
+    "tinyglobby": "^0.2.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "sharp": "^0.34.2",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

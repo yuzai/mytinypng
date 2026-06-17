@@ -1,0 +1,40 @@
+{
+  "name": "@mytinypng/core",
+  "version": "0.1.0",
+  "description": "TinyPNG-quality image compression engine (sharp + mozjpeg + palette quantization).",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bench": "tsx bench/run.ts",
+    "compare": "tsx bench/compare-tinypng.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jsquash/oxipng": "^2.3.0",
+    "sharp": "^0.34.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tinify": "^1.8.0",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "license": "MIT"
+}
