@@ -189,7 +189,10 @@ export async function compress(
     originalSize,
     inputFormat,
     outFormat,
-    formatUnchanged: outFormat === inputFormat,
+    // Only "unchanged" when the input format was actually recognized AND equals
+    // the output. Otherwise (e.g. an undecoded gif/tiff being converted) the
+    // never-larger fallback must not emit the original bytes under a new ext.
+    formatUnchanged: detected != null && outFormat === detected,
   };
 
   const encodeOpts = (quality: number): EncodeOpts => ({

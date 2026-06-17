@@ -51,14 +51,45 @@ export class Compressor {
     };
 
     return new Promise<CompressResponse>((resolve) => {
+      const cleanup = () => {
+        worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
+        worker.removeEventListener("messageerror", onError);
+      };
+      // Resolve (never reject) so a single bad file can't crash the whole batch.
+      const fail = (message: string) => {
+        cleanup();
+        this.release(worker);
+        resolve({
+          id,
+          ok: false,
+          name: file.name,
+          outType: req.type,
+          originalSize: buffer.byteLength,
+          compressedSize: 0,
+          skipped: false,
+          error: message,
+        });
+      };
       const onMessage = (e: MessageEvent<CompressResponse>) => {
         if (e.data.id !== id) return;
-        worker.removeEventListener("message", onMessage);
+        cleanup();
         this.release(worker);
         resolve(e.data);
       };
+      // A worker that crashes/aborts (OOM, wasm abort) without replying would
+      // otherwise leave this promise pending forever and leak the worker.
+      const onError = (e: ErrorEvent | MessageEvent) =>
+        fail((e as ErrorEvent)?.message ?? "worker crashed");
+
       worker.addEventListener("message", onMessage);
-      worker.postMessage(req, [buffer]);
+      worker.addEventListener("error", onError);
+      worker.addEventListener("messageerror", onError);
+      try {
+        worker.postMessage(req, [buffer]);
+      } catch (err) {
+        fail((err as Error)?.message ?? "failed to dispatch to worker");
+      }
     });
   }
 

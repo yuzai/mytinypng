@@ -151,6 +151,9 @@ function parse(argv: string[]): ParsedOptions {
   if (values.overwrite && values.output) {
     throw new Error("Use either --overwrite or --output, not both.");
   }
+  if (values.smart && values.lossless) {
+    throw new Error("--smart (perceptual quality search) cannot be combined with --lossless.");
+  }
 
   return {
     inputs: positionals,
@@ -244,10 +247,9 @@ function outputPathFor(file: string, base: string, opts: ParsedOptions): string 
     return join(resolve(opts.output), dirname(safeRel), stem + ext);
   }
 
-  // Default: alongside original. Add the suffix only if we'd otherwise clobber
-  // the input (same extension); a format conversion already yields a new name.
-  const candidate = join(dirname(file), stem + ext);
-  return candidate === file ? join(dirname(file), stem + opts.suffix + ext) : candidate;
+  // Default: alongside the original, always with the suffix so we never clobber
+  // an unrelated existing file (e.g. `a.png --to jpeg` must not overwrite a.jpg).
+  return join(dirname(file), stem + opts.suffix + ext);
 }
 
 interface FileResult {
@@ -272,12 +274,32 @@ interface CacheCtx {
 
 const sha256 = (b: Buffer) => createHash("sha256").update(b).digest("hex");
 
+const pathExists = (p: string) =>
+  stat(p).then(
+    () => true,
+    () => false,
+  );
+
+/** Append -1, -2, … before the extension until the path is unused. */
+function disambiguate(path: string, used: Set<string>): string {
+  if (!used.has(path)) return path;
+  const ext = extname(path);
+  const stem = path.slice(0, path.length - ext.length);
+  let n = 1;
+  let candidate: string;
+  do {
+    candidate = `${stem}-${n++}${ext}`;
+  } while (used.has(candidate));
+  return candidate;
+}
+
 async function processFile(
   entry: InputFile,
+  output: string,
   opts: ParsedOptions,
   cache: CacheCtx,
 ): Promise<FileResult> {
-  const { file, base } = entry;
+  const { file } = entry;
   const buf = await readFile(file);
 
   // Already one of our outputs → skip, so repeated runs never re-compress
@@ -302,7 +324,6 @@ async function processFile(
     pngOptimize: !opts.skipOxipng,
   };
   const result = await compress(buf, options);
-  const output = outputPathFor(file, base, opts);
 
   if (!opts.dryRun) {
     // Skip rewriting an unchanged file onto itself in overwrite mode.
@@ -379,9 +400,43 @@ export async function run(argv: string[]): Promise<RunResult> {
     }
   }
 
-  const results = await pool(files, opts.concurrency, async (entry) => {
+  // Plan output paths up front: resolve intra-run collisions (two inputs that
+  // map to the same output) and refuse to silently clobber an unrelated file
+  // when an in-place format conversion retargets to a different existing path.
+  const usedOutputs = new Set<string>();
+  const plan: Array<{ entry: InputFile; output: string; skipReason?: string }> = [];
+  for (const entry of files) {
+    let output = outputPathFor(entry.file, entry.base, opts);
+    if (output !== entry.file) output = disambiguate(output, usedOutputs);
+    usedOutputs.add(output);
+
+    let skipReason: string | undefined;
+    if (
+      opts.overwrite &&
+      !opts.force &&
+      !opts.dryRun &&
+      output !== entry.file &&
+      (await pathExists(output))
+    ) {
+      skipReason = `would overwrite existing ${relative(process.cwd(), output)} (use --force)`;
+    }
+    plan.push({ entry, output, skipReason });
+  }
+
+  const results = await pool(plan, opts.concurrency, async ({ entry, output, skipReason }) => {
+    if (skipReason) {
+      return {
+        input: entry.file,
+        output,
+        originalSize: 0,
+        compressedSize: 0,
+        ratio: 0,
+        skipped: false,
+        error: skipReason,
+      } satisfies FileResult;
+    }
     try {
-      return await processFile(entry, opts, cache);
+      return await processFile(entry, output, opts, cache);
     } catch (e) {
       return {
         input: entry.file,

@@ -70,6 +70,20 @@ describe("compress", () => {
     expect(r.compressedSize).toBeLessThanOrEqual(small.length);
   });
 
+  it("converts an undetected input format (gif) without emitting the original bytes", async () => {
+    // detectFormat() returns null for gif; converting it must never let the
+    // never-larger fallback return the raw, undecoded gif under a webp name.
+    const gif = await sharp({
+      create: { width: 8, height: 8, channels: 3, background: { r: 10, g: 200, b: 60 } },
+    })
+      .gif()
+      .toBuffer();
+    const r = await compress(gif, { format: "webp" });
+    expect(r.format).toBe("webp");
+    expect(r.skipped).toBe(false);
+    expect((await sharp(r.data).metadata()).format).toBe("webp");
+  });
+
   it("smart mode meets the SSIM target", async () => {
     const png = await makePng();
     const ref = await lumaOf(png);

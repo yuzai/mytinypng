@@ -32,6 +32,8 @@ export function App() {
   if (!compressor.current) compressor.current = new Compressor();
 
   const [items, setItems] = useState<Item[]>([]);
+  const itemsRef = useRef<Item[]>([]);
+  itemsRef.current = items;
   const [format, setFormat] = useState<OutFormat>("keep");
   const [customQuality, setCustomQuality] = useState(false);
   const [quality, setQuality] = useState(80);
@@ -94,16 +96,14 @@ export function App() {
   );
 
   const recompressAll = useCallback(() => {
+    // Side effects (revoke URLs, launch work) must stay OUT of the state updater
+    // — under StrictMode an impure updater runs twice and double-compresses.
+    const current = itemsRef.current;
+    for (const it of current) if (it.url) URL.revokeObjectURL(it.url);
     setItems((prev) =>
-      prev.map((it) => {
-        if (it.url) URL.revokeObjectURL(it.url);
-        return { ...it, status: "working", url: undefined, outBlob: undefined };
-      }),
+      prev.map((it) => ({ ...it, status: "working", url: undefined, outBlob: undefined })),
     );
-    setItems((prev) => {
-      for (const it of prev) void runOne(it.id, it.file);
-      return prev;
-    });
+    for (const it of current) void runOne(it.id, it.file);
   }, [runOne]);
 
   const clearAll = useCallback(() => {

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -60,14 +60,14 @@ describe("cli run()", () => {
     expect(await exists(join(dir, "b.min.png"))).toBe(false);
   });
 
-  it("--to converts format (and uses the new extension, no suffix)", async () => {
+  it("--to converts format to a suffixed file (non-destructive default)", async () => {
     const src = join(dir, "c.png");
     await writePng(src);
 
     const { code } = await run([src, "--to", "webp", "--quiet"]);
     expect(code).toBe(0);
 
-    const out = join(dir, "c.webp");
+    const out = join(dir, "c.min.webp"); // suffixed so it can't clobber an existing c.webp
     expect(await exists(out)).toBe(true);
     const meta = await sharp(await readFile(out)).metadata();
     expect(meta.format).toBe("webp");
@@ -97,6 +97,55 @@ describe("cli run()", () => {
   it("returns exit code 1 when there are no matching files", async () => {
     const { code } = await run([join(dir, "nope-*.png"), "--quiet"]);
     expect(code).toBe(1);
+  });
+
+  it("default mode never clobbers an unrelated existing file on format conversion", async () => {
+    const src = join(dir, "a.png");
+    await writePng(src);
+    const existing = join(dir, "a.jpg");
+    await writeFile(existing, "PRE-EXISTING"); // unrelated file at the convert target
+
+    const { code } = await run([src, "--to", "jpeg", "--quiet"]);
+    expect(code).toBe(0);
+    expect(await readFile(existing, "utf8")).toBe("PRE-EXISTING"); // untouched
+    expect(await exists(join(dir, "a.min.jpg"))).toBe(true); // suffixed instead
+  });
+
+  it("--overwrite + --to refuses to clobber a different existing file (without --force)", async () => {
+    const src = join(dir, "b.png");
+    await writePng(src);
+    const existing = join(dir, "b.jpg");
+    await writeFile(existing, "PRE-EXISTING");
+
+    const { code } = await run([src, "--to", "jpeg", "-w", "--quiet"]);
+    expect(code).toBe(1); // reported as a failure, not silently destroyed
+    expect(await readFile(existing, "utf8")).toBe("PRE-EXISTING");
+
+    const forced = await run([src, "--to", "jpeg", "-w", "--force", "--quiet"]);
+    expect(forced.code).toBe(0);
+    expect(await readFile(existing, "utf8")).not.toBe("PRE-EXISTING"); // now overwritten
+  });
+
+  it("disambiguates two inputs that map to the same output path", async () => {
+    const x = join(dir, "x");
+    const y = join(dir, "y");
+    await mkdir(x, { recursive: true });
+    await mkdir(y, { recursive: true });
+    await writePng(join(x, "same.png"));
+    await writePng(join(y, "same.png"));
+    const out = join(dir, "out");
+
+    const { code } = await run([join(x, "same.png"), join(y, "same.png"), "-o", out, "--quiet"]);
+    expect(code).toBe(0);
+    expect(await exists(join(out, "same.png"))).toBe(true);
+    expect(await exists(join(out, "same-1.png"))).toBe(true); // second one disambiguated
+  });
+
+  it("rejects --smart combined with --lossless", async () => {
+    const src = join(dir, "s.png");
+    await writePng(src);
+    const { code } = await run([src, "--smart", "--lossless", "--quiet"]);
+    expect(code).toBe(2); // parse error, not silently ignored
   });
 
   it("--cache skips a file we already compressed (no re-compress on rerun)", async () => {

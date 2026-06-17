@@ -22,6 +22,8 @@ TinyPNG's results come from two well-known techniques; this uses the same ones:
 
 Plus TinyPNG's safety behaviors: **never output a larger file**, strip bulky EXIF/XMP metadata but **keep the ICC color profile** and bake in EXIF orientation.
 
+> The ICC-preservation guarantee applies to the **Node engine and CLI** (`sharp.keepIccProfile()`). The **browser app** decodes through a canvas, so it is not color-managed and does not re-embed ICC profiles — fine for the common sRGB case, but wide-gamut (Display-P3 / AdobeRGB) images should be compressed with the CLI to keep their colors.
+
 ### Validated, not assumed
 
 The repo includes a real head-to-head harness (`packages/core/bench/compare-tinypng.ts`). It runs the same images through the **real TinyPNG API** and our engine, measures byte size and a perceptual SSIM (light blur before SSIM, so dither grain doesn't fool the metric), and writes a side-by-side gallery. On a 9-image set (photos, screenshots, UI graphics, transparent PNGs): quality tied per-image, total bytes −0.6%.

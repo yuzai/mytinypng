@@ -28,12 +28,15 @@ async function toImageData(buffer: ArrayBuffer, type: string): Promise<ImageData
   const bitmap = await createImageBitmap(new Blob([buffer], { type }), {
     imageOrientation: "from-image", // bake EXIF orientation in
   });
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) throw new Error("2D canvas unavailable in worker");
-  ctx.drawImage(bitmap, 0, 0);
-  bitmap.close();
-  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  try {
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("2D canvas unavailable in worker");
+    ctx.drawImage(bitmap, 0, 0);
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  } finally {
+    bitmap.close(); // release the decoded bitmap even if drawing throws (OOM)
+  }
 }
 
 /**
@@ -41,7 +44,10 @@ async function toImageData(buffer: ArrayBuffer, type: string): Promise<ImageData
  * palette (image-q, like libimagequant), encode, then oxipng losslessly (it
  * also reduces the RGBA encoding down to an indexed-color PNG).
  */
-async function encodePngQuantized(image: ImageData, colors = 256): Promise<ArrayBuffer> {
+async function encodePngQuantized(image: ImageData, quality: number): Promise<ArrayBuffer> {
+  // Map quality to palette size so the quality control actually affects PNG
+  // (mirrors the engine trading colors for size). 100 → 256 colors.
+  const colors = Math.max(2, Math.min(256, Math.round((quality / 100) * 256)));
   const inPC = utils.PointContainer.fromUint8Array(image.data, image.width, image.height);
   const palette = buildPaletteSync([inPC], {
     colors,
@@ -78,7 +84,7 @@ self.onmessage = async (e: MessageEvent<CompressRequest>) => {
       out = await encodeWebp(image, { quality: q });
       outType = "image/webp";
     } else {
-      out = await encodePngQuantized(image);
+      out = await encodePngQuantized(image, q);
       outType = "image/png";
     }
 
