@@ -41,11 +41,47 @@ body {
   padding: 40px 20px 80px;
 }
 
+.hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
 .hero h1 {
   font-size: 40px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin: 0 0 8px;
+  margin: 0;
+}
+
+/* Open-source CTA — sits opposite the wordmark, styled to match the panels. */
+.gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, transform 0.06s, box-shadow 0.15s;
+}
+.gh:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: var(--panel-2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.gh:active {
+  transform: translateY(1px);
+}
+.gh svg {
+  flex: none;
 }
 .hero h1 span {
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
@@ -285,4 +321,31 @@ button:disabled {
   text-align: center;
   color: var(--muted);
   font-size: 12px;
+}
+.foot p {
+  margin: 0 0 8px;
+}
+.foot-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.foot-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s;
+}
+.foot-links a:hover {
+  color: var(--accent);
+}
+.foot-links svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
 }

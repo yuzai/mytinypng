@@ -1,6 +1,13 @@
 # mytinypng
 
+[![Deploy web to GitHub Pages](https://github.com/yuzai/mytinypng/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/yuzai/mytinypng/actions/workflows/deploy-pages.yml)
+[![Live demo](https://img.shields.io/badge/demo-live-4ade80)](http://blog.maxiaobo.com.cn/mytinypng/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-22d3ee)](LICENSE)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-4ade80)](https://github.com/yuzai/mytinypng/issues)
+
 **TinyPNG-quality image compression** — as a Node engine, a CLI/library, an AI skill, and a browser app. Quality has been validated head-to-head against the real TinyPNG API: **equal perceptual quality, total size −0.6%** across a mixed test set.
+
+> 🔗 **Try it now — no install, runs 100% in your browser:** **[blog.maxiaobo.com.cn/mytinypng](http://blog.maxiaobo.com.cn/mytinypng/)**
 
 ```
 ┌─ @mytinypng/core ─ the engine (sharp + mozjpeg + libimagequant + oxipng)
@@ -63,6 +70,8 @@ npx mytinypng assets/ -r -w --cache      # idempotent: skip already-compressed
 
 ### 4. `@mytinypng/web` — browser app
 
+**▶ Live: [blog.maxiaobo.com.cn/mytinypng](http://blog.maxiaobo.com.cn/mytinypng/)** (auto-deployed from `main` to GitHub Pages).
+
 A pure static site. Drag in images → they're compressed **entirely in your browser** (WebAssembly in a worker; nothing is uploaded) → download (keeps the original filename so it drops back in place; ZIP for batches).
 
 ```bash
@@ -88,6 +97,20 @@ TINIFY_KEY=your_key_here
 
 Results are cached by content hash in `bench/.tinycache/`, so re-runs cost no quota.
 
+### Deployment
+
+The browser app ships to GitHub Pages on every push to `main` via [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) — it builds `@mytinypng/web` and publishes `packages/web/dist`. The Vite `base` is relative (`"./"`), so the same build works on any host or subpath.
+
+## Contributing
+
+This is a fully **open-source** project and contributions are welcome — issues, bug reports, and PRs all help. A good loop:
+
+1. `pnpm install`
+2. Make your change with a test (`pnpm -r test` must stay green).
+3. Open a PR. CI builds the web app and the deploy runs on merge.
+
+Found a bug or have an idea? [Open an issue](https://github.com/yuzai/mytinypng/issues).
+
 ## License
 
-MIT
+Released under the [MIT License](LICENSE) — free to use, modify, and distribute.
