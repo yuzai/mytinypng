@@ -16,15 +16,28 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
-  "keywords": ["image", "compression", "tinypng", "png", "jpeg", "webp", "optimize", "cli", "sharp"],
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "image",
+    "compression",
+    "tinypng",
+    "png",
+    "jpeg",
+    "webp",
+    "optimize",
+    "cli",
+    "sharp"
+  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@mytinypng/core": "workspace:*",
+    "mytinypng-core": "workspace:*",
     "tinyglobby": "^0.2.12"
   },
   "devDependencies": {
@@ -38,5 +51,15 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuzai/mytinypng.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/yuzai/mytinypng#readme",
+  "bugs": {
+    "url": "https://github.com/yuzai/mytinypng/issues"
+  },
+  "author": "yuzai"
 }

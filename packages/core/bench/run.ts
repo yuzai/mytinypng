@@ -4,7 +4,7 @@
  * table. Use it to confirm defaults land at "visually lossless, TinyPNG-level"
  * (typically SSIM >= ~0.98 with a large size reduction).
  *
- *   pnpm --filter @mytinypng/core bench
+ *   pnpm --filter mytinypng-core bench
  */
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";

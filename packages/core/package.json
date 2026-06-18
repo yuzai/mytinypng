@@ -1,5 +1,5 @@
 {
-  "name": "@mytinypng/core",
+  "name": "mytinypng-core",
   "version": "0.1.0",
   "description": "TinyPNG-quality image compression engine (sharp + mozjpeg + palette quantization).",
   "type": "module",
@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "bench": "tsx bench/run.ts",
     "compare": "tsx bench/compare-tinypng.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@jsquash/oxipng": "^2.3.0",
@@ -36,5 +37,15 @@
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuzai/mytinypng.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/yuzai/mytinypng#readme",
+  "bugs": {
+    "url": "https://github.com/yuzai/mytinypng/issues"
+  },
+  "author": "yuzai"
 }

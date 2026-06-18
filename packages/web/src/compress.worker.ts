@@ -6,7 +6,7 @@ import { encode as encodeWebp } from "@jsquash/webp";
 import { applyPaletteSync, buildPaletteSync, utils } from "image-q";
 import type { CompressRequest, CompressResponse } from "./types";
 
-// Mirrors the @mytinypng/core defaults (validated against TinyPNG).
+// Mirrors the mytinypng-core defaults (validated against TinyPNG).
 const DEFAULT_QUALITY = { jpeg: 78, webp: 80, png: 80 } as const;
 
 type BaseFormat = "jpeg" | "png" | "webp";

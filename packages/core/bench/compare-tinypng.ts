@@ -1,8 +1,8 @@
 /**
  * Head-to-head: the REAL TinyPNG API vs our engine, on identical images.
  *
- *   TINIFY_KEY=... pnpm --filter @mytinypng/core compare         (uses cache)
- *   TINIFY_KEY=... pnpm --filter @mytinypng/core compare --refresh   (re-fetch)
+ *   TINIFY_KEY=... pnpm --filter mytinypng-core compare         (uses cache)
+ *   TINIFY_KEY=... pnpm --filter mytinypng-core compare --refresh   (re-fetch)
  *
  * Free key: https://tinypng.com/developers (500 images/month). TinyPNG results
  * are cached by content hash under bench/.tinycache, so re-running while tuning

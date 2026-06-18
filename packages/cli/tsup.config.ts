@@ -12,5 +12,5 @@ export default defineConfig({
   target: "node18",
   shims: true,
   define: { __VERSION__: JSON.stringify(pkg.version) },
-  external: ["sharp", "@jsquash/oxipng", "@mytinypng/core"],
+  external: ["sharp", "@jsquash/oxipng", "mytinypng-core"],
 });

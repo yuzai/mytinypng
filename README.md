@@ -10,7 +10,7 @@
 > 🔗 **Try it now — no install, runs 100% in your browser:** **[blog.maxiaobo.com.cn/mytinypng](http://blog.maxiaobo.com.cn/mytinypng/)**
 
 ```
-┌─ @mytinypng/core ─ the engine (sharp + mozjpeg + libimagequant + oxipng)
+┌─ mytinypng-core ─ the engine (sharp + mozjpeg + libimagequant + oxipng)
 │
 ├─ mytinypng ─────── CLI + library (batch compress; --cache; --smart)
 ├─ compress-images ─ AI skill (Claude Code) that drives the CLI on a folder
@@ -37,10 +37,10 @@ The repo includes a real head-to-head harness (`packages/core/bench/compare-tiny
 
 ## The four deliverables
 
-### 1. `@mytinypng/core` — the engine
+### 1. `mytinypng-core` — the engine
 
 ```ts
-import { compress } from "@mytinypng/core";
+import { compress } from "mytinypng-core";
 
 const result = await compress(inputBufferOrPath, {
   format: "keep",        // or "jpeg" | "png" | "webp" | "avif"
@@ -85,8 +85,8 @@ pnpm --filter @mytinypng/web build     # static output in packages/web/dist (dep
 pnpm install
 pnpm -r build          # build all packages
 pnpm -r test           # run all tests
-pnpm --filter @mytinypng/core bench    # quality sweep on fixtures
-pnpm --filter @mytinypng/core compare  # head-to-head vs real TinyPNG (needs TINIFY_KEY)
+pnpm --filter mytinypng-core bench    # quality sweep on fixtures
+pnpm --filter mytinypng-core compare  # head-to-head vs real TinyPNG (needs TINIFY_KEY)
 ```
 
 The head-to-head needs a free TinyPNG API key (https://tinypng.com/developers, 500/mo) in a gitignored root `.env`:

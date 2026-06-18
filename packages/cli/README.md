@@ -42,7 +42,7 @@ By default it writes a `*.min.ext` copy and **never touches the original**. Use 
 ## Library
 
 ```ts
-import { compress } from "mytinypng"; // re-exports @mytinypng/core
+import { compress } from "mytinypng"; // re-exports mytinypng-core
 
 const { data, compressedSize, ratio, skipped } = await compress(buffer, {
   format: "keep",      // "jpeg" | "png" | "webp" | "avif"

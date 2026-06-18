@@ -1,9 +1,9 @@
-# @mytinypng/core
+# mytinypng-core
 
 The image-compression engine behind [mytinypng](https://www.npmjs.com/package/mytinypng) — TinyPNG-quality output with one API. Built on `sharp` (libvips): mozjpeg for JPEG, libimagequant for PNG, libwebp/AVIF, plus a lossless `oxipng` post-pass on PNG.
 
 ```ts
-import { compress } from "@mytinypng/core";
+import { compress } from "mytinypng-core";
 
 const result = await compress(inputBufferOrPath, {
   format: "keep",      // "jpeg" | "png" | "webp" | "avif" | "keep" (default)

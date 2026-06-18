@@ -15,7 +15,7 @@ import {
   type ImageFormat,
   compress,
   extensionForFormat,
-} from "@mytinypng/core";
+} from "mytinypng-core";
 import { glob } from "tinyglobby";
 
 declare const __VERSION__: string;
